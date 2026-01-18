@@ -1,3 +1,3 @@
-module github.com/goexploit/gohook
+module github.com/goexploit/gosignal
 
 go 1.21
