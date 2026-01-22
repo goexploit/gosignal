@@ -1,6 +1,7 @@
 package gosignal
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"math"
@@ -20,7 +21,7 @@ type LogFunc func(string)
 
 type Hook interface {
 	LogFunc(LogFunc)
-	Exec() error
+	Exec(context.Context) error
 
 	GetFunction(name string) *Function
 	GetNotify(name string) *Notify
@@ -109,7 +110,7 @@ func (h *hook) LogFunc(logfunc LogFunc) {
 	h.mu.Unlock()
 }
 
-func (h *hook) Exec() error {
+func (h *hook) Exec(ctx context.Context) error {
 	h.mu.Lock()
 	h.reorder()
 	h.mu.Unlock()
@@ -123,9 +124,9 @@ func (h *hook) Exec() error {
 			function.Name, function.Desc, function.Concurrent, function.Order)
 
 		if function.Concurrent {
-			go function.Func()
+			go function.Func(ctx)
 		} else {
-			function.Func()
+			function.Func(ctx)
 		}
 	}
 

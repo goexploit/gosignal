@@ -1,7 +1,9 @@
 package gosignal
 
+import "context"
+
 type Function struct {
-	Func func()
+	Func func(context.Context)
 
 	Name string
 	Desc string

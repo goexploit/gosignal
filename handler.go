@@ -1,6 +1,7 @@
 package gosignal
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -18,6 +19,20 @@ var (
 	ErrLoopLocked   = errors.New("loop is already running")
 	ErrExitLocked   = errors.New("exit is already running")
 )
+
+type et uint8
+
+const (
+	ExitTypeSignal et = iota
+	ExitTypeManual
+)
+
+type OSSignal struct {
+	Signal   os.Signal
+	Exit     bool
+	ExitType et
+	ExitCode int
+}
 
 type Handler interface {
 	SetExit(Hook) error
@@ -138,12 +153,27 @@ func (h *handler) handleSignal(sig os.Signal) {
 		return
 	}
 
+	s := &OSSignal{
+		Signal:   sig,
+		Exit:     false,
+		ExitType: ExitTypeSignal,
+		ExitCode: 0,
+	}
+	ctx := context.TODO()
+	ctx = context.WithValue(ctx, "signal", s)
+
+	switch sig {
+	case syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT:
+		s.Exit = true
+		s.ExitCode = 0
+	}
+
 	if hook, ok := h.hookMap[sig]; ok {
-		hook.Exec()
+		hook.Exec(ctx)
 	}
 	switch sig {
 	case syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT:
-		h.exit(0)
+		h.exit(0, ExitTypeSignal, sig)
 	}
 }
 
@@ -171,7 +201,7 @@ handling_loop:
 	}
 }
 
-func (h *handler) exit(code int) {
+func (h *handler) exit(code int, t et, sig os.Signal) {
 	if h.exitLock {
 		return
 	}
@@ -182,8 +212,17 @@ func (h *handler) exit(code int) {
 	}
 	h.loopLock = false
 
+	s := &OSSignal{
+		Signal:   sig,
+		Exit:     true,
+		ExitType: t,
+		ExitCode: code,
+	}
+	ctx := context.TODO()
+	ctx = context.WithValue(ctx, "signal", s)
+
 	if h.exitHook != nil {
-		h.exitHook.Exec()
+		h.exitHook.Exec(ctx)
 	}
 	signal.Reset(h.capturing...)
 	os.Exit(code)
@@ -192,7 +231,7 @@ func (h *handler) exit(code int) {
 func (h *handler) Exit(code int) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
-	h.exit(code)
+	h.exit(code, ExitTypeManual, nil)
 }
 
 var _ Handler = (*handler)(nil)
