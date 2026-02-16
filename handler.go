@@ -173,7 +173,7 @@ func (h *handler) handleSignal(sig os.Signal) {
 	}
 	switch sig {
 	case syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT:
-		h.exit(0, ExitTypeSignal, sig)
+		h.exit(0, ExitTypeSignal, sig, true)
 	}
 }
 
@@ -201,7 +201,7 @@ handling_loop:
 	}
 }
 
-func (h *handler) exit(code int, t et, sig os.Signal) {
+func (h *handler) exit(code int, t et, sig os.Signal, osexit bool) {
 	if h.exitLock {
 		return
 	}
@@ -225,13 +225,22 @@ func (h *handler) exit(code int, t et, sig os.Signal) {
 		h.exitHook.Exec(ctx)
 	}
 	signal.Reset(h.capturing...)
-	os.Exit(code)
+
+	if osexit {
+		os.Exit(code)
+	}
 }
 
 func (h *handler) Exit(code int) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
-	h.exit(code, ExitTypeManual, nil)
+	h.exit(code, ExitTypeManual, nil, true)
+}
+
+func (h *handler) ExitOnlyHook(code int) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.exit(code, ExitTypeManual, nil, false)
 }
 
 var _ Handler = (*handler)(nil)
