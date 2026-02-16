@@ -45,6 +45,7 @@ type Handler interface {
 
 	Loop()
 	Exit(int)
+	ExitOnlyHook(code int)
 }
 
 // impl Handler
