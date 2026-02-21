@@ -17,10 +17,7 @@ var (
 	ErrChanNil           = errors.New("chan is nil")
 )
 
-type LogFunc func(string)
-
 type Hook interface {
-	LogFunc(LogFunc)
 	Exec(context.Context) error
 
 	GetFunction(name string) *Function
@@ -42,8 +39,7 @@ type hook struct {
 	functionOrder []*Function
 	notifyOrder   []*Notify
 
-	logfunc LogFunc
-	mu      sync.RWMutex
+	mu sync.RWMutex
 }
 
 func (h *hook) reorder() {
@@ -97,19 +93,6 @@ func (h *hook) reorder() {
 	}
 }
 
-func (h *hook) log(message string, args ...any) {
-	if h.logfunc == nil {
-		return
-	}
-	h.logfunc(fmt.Sprintf(message, args...))
-}
-
-func (h *hook) LogFunc(logfunc LogFunc) {
-	h.mu.Lock()
-	h.logfunc = logfunc
-	h.mu.Unlock()
-}
-
 func (h *hook) Exec(ctx context.Context) error {
 	h.mu.Lock()
 	h.reorder()
@@ -120,9 +103,6 @@ func (h *hook) Exec(ctx context.Context) error {
 
 	// functions
 	for _, function := range h.functionOrder {
-		h.log("Exec: running function %s - %s (concurrent: %v, order: %d)\n",
-			function.Name, function.Desc, function.Concurrent, function.Order)
-
 		if function.Concurrent {
 			go function.Func(ctx)
 		} else {
@@ -132,9 +112,6 @@ func (h *hook) Exec(ctx context.Context) error {
 
 	// notifies
 	for _, notify := range h.notifyOrder {
-		h.log("Exec: running notify %s - %s (non-blocking: %v, order: %d)\n",
-			notify.Name, notify.Desc, notify.NonBlocking, notify.Order)
-
 		if notify.NonBlocking {
 			// non-blocking channel write
 			select {
@@ -150,7 +127,6 @@ func (h *hook) Exec(ctx context.Context) error {
 		}
 	}
 
-	h.log("Exec: ok")
 	return nil
 }
 
