@@ -160,7 +160,7 @@ func (h *hook) Function(function *Function) error {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
-	if _, ok := h.functions[function.Name]; ok {
+	if _, ok := h.functions[function.Name]; ok && !function.Overwrite {
 		return fmt.Errorf("%w: \"%s\"", ErrFunctionExists, function.Name)
 	}
 
@@ -181,7 +181,7 @@ func (h *hook) Notify(notify *Notify) error {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
-	if _, ok := h.notifies[notify.Name]; ok {
+	if _, ok := h.notifies[notify.Name]; ok && !notify.Overwrite {
 		return fmt.Errorf("%w: \"%s\"", ErrNotifyExists, notify.Name)
 	}
 
