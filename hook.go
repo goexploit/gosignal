@@ -15,6 +15,7 @@ var (
 	ErrNotifyNameEmpty   = errors.New("notify name is empty")
 	ErrFuncNil           = errors.New("func is nil")
 	ErrChanNil           = errors.New("chan is nil")
+	ErrParamNil          = errors.New("parameter is nil")
 )
 
 type Hook interface {
@@ -149,7 +150,9 @@ func (h *hook) GetNotify(name string) *Notify {
 }
 
 func (h *hook) Function(function *Function) error {
-	// requirements
+	if function == nil {
+		return ErrParamNil
+	}
 	if function.Name == "" {
 		return ErrFunctionNameEmpty
 	}
@@ -170,7 +173,9 @@ func (h *hook) Function(function *Function) error {
 }
 
 func (h *hook) Notify(notify *Notify) error {
-	// requirements
+	if notify == nil {
+		return ErrParamNil
+	}
 	if notify.Name == "" {
 		return ErrNotifyNameEmpty
 	}
