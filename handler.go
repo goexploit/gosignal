@@ -35,16 +35,16 @@ type OSSignal struct {
 }
 
 type Handler interface {
-	SetExit(Hook) error
+	SetExit(hook Hook) error
 	GetExit() Hook
 	GetsExit() Hook
 
-	Set(os.Signal, Hook) error
-	Get(os.Signal) Hook
-	Gets(os.Signal) Hook
+	Set(signal os.Signal, hook Hook) error
+	Get(signal os.Signal) Hook
+	Gets(signal os.Signal) Hook
 
 	Loop()
-	Exit(int)
+	Exit(code int)
 	ExitOnlyHook(code int)
 }
 

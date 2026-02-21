@@ -18,13 +18,13 @@ var (
 )
 
 type Hook interface {
-	Exec(context.Context) error
+	Exec(ctx context.Context) error
 
 	GetFunction(name string) *Function
 	GetNotify(name string) *Notify
 
-	Function(*Function) error
-	Notify(*Notify) error
+	Function(function *Function) error
+	Notify(notify *Notify) error
 }
 
 // impl Hook
